@@ -82,7 +82,7 @@ This is so the scanner doesn't get stuck in an infinite loop!"
 (fn init-position [doc]
   "Sets the scope searcher's initial position."
   (set-pos lock-position (doc:get_selection))
-  (debug-pos current-position "Lock"))
+  (debug-pos lock-position "Lock"))
 
 (fn update-position [doc]
   "Update's the scope searcher's current position."
