@@ -8,6 +8,7 @@
 ;;tt Try to eval line, if blank:
 ;;tt Eval last scope entry point
 
+;; Core components
 (local core (require :core))
 (local config (require :core.config))
 (local command (require :core.command))
@@ -19,6 +20,9 @@
 (local DocView (require :core.docview))
 (local translate (require :core.doc.translate))
 
+;; Plugins
+(local bracketmatch (require :plugins.bracketmatch))
+
 
 ;; BASE EMACS STYLE WALKER
 
@@ -29,9 +33,11 @@
 ;; Current position of the helper cursor.
 (var current-position {:x 0
                        :y 0})
+
 ;; Min helper position. Used for scope identification.
 (var scope-start-position {:x 0
                            :y 0})
+
 ;; Max helper position. Used for scope identification.
 (var scope-end-position {:x 0
                          :y 0})
@@ -49,15 +55,20 @@
   (tset pos :x x)
   (tset pos :y y))
 
-(fn set-pos-from-doc-selection [pos y x]
-  "Doc selection is Y (line) X (column) inverted, so we must fix it."
-  (tset pos :x x)
-  (tset pos :y y))
+;; (fn set-pos-from-doc [pos y x]
+;;   "Doc selection is Y (line) X (column) inverted, so we must fix it."
+;;   (tset pos :x x)
+;;   (tset pos :y y))
 
 (fn less-than [pos1 pos2]
-  ;; Check if position 1 is less than position 2.
+  "Check if position 1 is less than position 2."
   (and (< (get-x pos1) (get-x pos2))
        (< (get-y pos1) (get-y pos2))))
+
+(fn hit-lock []
+  "Find if the current position has finally hit the lock position.
+This is so the scanner doesn't get stuck in an infinite loop!"
+  (not (less-than current-position lock-position)))
 
 (fn debug-pos [pos info-text]
   "Print the current position of the helper cursor."
@@ -68,38 +79,47 @@
   "Shorthand for getting the current active document or nil."
   core.active_view.doc)
 
-(fn init-position []
+(fn init-position [doc]
   "Sets the scope searcher's initial position."
-  (when (active-doc)
-    (let [doc (active-doc)]
-      (set-pos-from-doc-selection current-position (doc:get_selection))
-      (set-pos-from-doc-selection lock-position (doc:get_selection))
-      (debug-pos current-position "Current")
-      (debug-pos current-position "Lock"))))
+  (set-pos lock-position (doc:get_selection))
+  (debug-pos current-position "Lock"))
 
-(fn update-position []
+(fn update-position [doc]
   "Update's the scope searcher's current position."
-  (when (active-doc)
-    (let [doc (active-doc)]
-      (set-pos-from-doc-selection current-position (doc:get_selection)))))
+  (set-pos current-position (doc:get_selection)))
 
-(fn at-beginning-of-line []
-  "Check if the helper cursor has reached the beginning of a line."
-  (<= (get-x current-position) 1))
-
-
-(fn walk-back []
-  (print "back we go"))
+(fn move-forward [doc]
+  "Move the cursor to the next position."
+  (doc:move_to translate.next_char)
+  (update-position doc))
 
 (fn scan-init [doc]
-  (doc:move_to translate.start_of_doc))
+  "Move the cursor back to the beginning. Let's find that scope."
+  (init-position doc)
+  (doc:move_to translate.start_of_doc)
+  (set-pos current-position (doc:get_selection))
+  (debug-pos current-position "Current"))
+
+
+(fn scan [doc]
+  (var solved false)
+  (print "scanning")
+  (while (not solved)
+
+    (debug-pos current-position "Current")
+
+    (move-forward doc)
+    (if (hit-lock)
+        (set solved true))))
+
 
 (fn begin-scope-scan []
-  ;; Here we LOCK the position in. We're gonna see if we can overshoot it.
-  (init-position)
+  (print "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
   (when (active-doc)
+    ;; Here we LOCK the position in. We're gonna see if we can overshoot it.
     (let [doc (active-doc)]
-      (scan-init doc))))
+      (scan-init doc)
+      (scan doc))))
 
 
 (local new-commands {})
@@ -109,3 +129,5 @@
 (local new-keymaps {})
 (tset new-keymaps "f10" "fennel_helpers:test")
 (keymap.add new-keymaps)
+
+
