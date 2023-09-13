@@ -21,7 +21,8 @@
 (local translate (require :core.doc.translate))
 
 ;; Plugins
-(local bracketmatch (require :plugins.bracketmatch))
+(local uber (require :plugins.fennel_helpers.uber_match_paren))
+;; (local bracketmatch (require :plugins.bracketmatch))
 
 
 ;; BASE EMACS STYLE WALKER
@@ -59,6 +60,10 @@
 ;;   "Doc selection is Y (line) X (column) inverted, so we must fix it."
 ;;   (tset pos :x x)
 ;;   (tset pos :y y))
+
+(fn decompile-pos [pos]
+  "Decompile a position so it can be passed directly into function as X Y."
+  (values (get-x pos) (get-y pos)))
 
 (fn less-than [pos1 pos2]
   "Check if position 1 is less than position 2."
