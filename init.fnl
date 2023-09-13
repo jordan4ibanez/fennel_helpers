@@ -62,8 +62,8 @@
 
 (fn less-than [pos1 pos2]
   "Check if position 1 is less than position 2."
-  (and (< (get-x pos1) (get-x pos2))
-       (< (get-y pos1) (get-y pos2))))
+  (or (< (get-x pos1) (get-x pos2))
+      (< (get-y pos1) (get-y pos2))))
 
 (fn hit-lock []
   "Find if the current position has finally hit the lock position.
