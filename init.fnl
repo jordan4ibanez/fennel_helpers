@@ -3,6 +3,11 @@
 ;; This is a stateful fennel file helper.
 ;; Since I am a game developer, this is written out like a 2D game.
 
+;;TODO: Needs to have a list of scopes within the scope! But not scopes that aren't within the scope that the cursor is in!
+;;tt Failure to find scope, like a one line repl test:
+;;tt Try to eval line, if blank:
+;;tt Eval last scope entry point
+
 (local core (require :core))
 (local config (require :core.config))
 (local command (require :core.command))
@@ -26,15 +31,10 @@
                        :y 0})
 ;; Min helper position. Used for scope identification.
 (var scope-start-position {:x 0
-                   :y 0})
+                           :y 0})
 ;; Max helper position. Used for scope identification.
 (var scope-end-position {:x 0
-                   :y 0})
-
-;;TODO: Needs to have a list of scopes within the scope! But not scopes that aren't within the scope that the cursor is in!
-;; Failure to find scope, like a one line repl test:
-;; Try to eval line, if blank:
-;; Eval last scope entry point
+                         :y 0})
 
 (fn get-x [pos]
   "Get the X component of a position table."
