@@ -1,2 +1,4 @@
 
 *.el~
+.vmacs-fonts-installed
+.vmacs-fully-initialized

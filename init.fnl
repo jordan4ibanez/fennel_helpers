@@ -17,15 +17,24 @@
 
 ;; BASE EMACS STYLE WALKER
 
+;; The initial position given to the algorithm.
+(var lock-position {:x 0
+                    :y 0})
+
 ;; Current position of the helper cursor.
 (var current-position {:x 0
                        :y 0})
 ;; Min helper position. Used for scope identification.
-(var min-position {:x 0
+(var scope-start-position {:x 0
                    :y 0})
 ;; Max helper position. Used for scope identification.
-(var max-position {:x 0
+(var scope-end-position {:x 0
                    :y 0})
+
+;;TODO: Needs to have a list of scopes within the scope! But not scopes that aren't within the scope that the cursor is in!
+;; Failure to find scope, like a one line repl test:
+;; Try to eval line, if blank:
+;; Eval last scope entry point
 
 (fn get-x [pos]
   "Get the X component of a position table."
@@ -45,9 +54,15 @@
   (tset pos :x x)
   (tset pos :y y))
 
-(fn debug-pos [pos]
+(fn less-than [pos1 pos2]
+  ;; Check if position 1 is less than position 2.
+  (and (< (get-x pos1) (get-x pos2))
+       (< (get-y pos1) (get-y pos2))))
+
+(fn debug-pos [pos info-text]
   "Print the current position of the helper cursor."
-  (print (string.format "position: ( %s | %s )" (get-x pos) (get-y pos))))
+  (let [info-text (or info-text "position")]
+    (print (string.format "%s: ( %s | %s )" info-text (get-x pos) (get-y pos)))))
 
 (fn active-doc []
   "Shorthand for getting the current active document or nil."
@@ -58,7 +73,15 @@
   (when (active-doc)
     (let [doc (active-doc)]
       (set-pos-from-doc-selection current-position (doc:get_selection))
-      (debug-pos current-position))))
+      (set-pos-from-doc-selection lock-position (doc:get_selection))
+      (debug-pos current-position "Current")
+      (debug-pos current-position "Lock"))))
+
+(fn update-position []
+  "Update's the scope searcher's current position."
+  (when (active-doc)
+    (let [doc (active-doc)]
+      (set-pos-from-doc-selection current-position (doc:get_selection)))))
 
 (fn at-beginning-of-line []
   "Check if the helper cursor has reached the beginning of a line."
@@ -68,19 +91,19 @@
 (fn walk-back []
   (print "back we go"))
 
-(fn scan-init []
+(fn scan-init [doc]
   (doc:move_to translate.start_of_doc))
 
-(fn walk-debug []
+(fn begin-scope-scan []
   ;; Here we LOCK the position in. We're gonna see if we can overshoot it.
   (init-position)
   (when (active-doc)
     (let [doc (active-doc)]
-      (scan-init))))
+      (scan-init doc))))
 
 
 (local new-commands {})
-(tset new-commands "fennel_helpers:test" walk-debug)
+(tset new-commands "fennel_helpers:test" begin-scope-scan)
 (command.add nil new-commands)
 
 (local new-keymaps {})
