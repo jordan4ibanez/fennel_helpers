@@ -116,9 +116,15 @@ This is so the scanner doesn't get stuck in an infinite loop!"
   (print "scanning")
   (while (not solved)
 
-    (debug-pos current-position "Current")
-
+    ;; (debug-pos current-position "Current")
     (move-forward doc)
+
+    (let [(x y) (decompile-pos current-position)
+          (got-x got-y) (uber.match doc x y)]
+      (when got-x
+        (print got-x got-y)))
+
+    
     (if (hit-lock)
         (set solved true))))
 

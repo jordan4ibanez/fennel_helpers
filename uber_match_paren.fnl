@@ -34,23 +34,24 @@
       (set-forcibly! (line col) (doc:position_offset line col direction))
       (when (and (= line prev-line) (= col prev-col)) (lua :break)))))
 
+;;TODO: This can be used to collect scope!
+;;tt Use this to do the red emacs parentheses things!
 (fn uber.match [doc line col]
   (let [line-limit math.huge]
     (var (line2 col2) nil)
     (var found false)
     (each [_ map (ipairs bracket-maps)]
       (when found (lua :break))
-      (for [i 0 (- 1) (- 1)]
-        (when found (lua :break))
-        (local (line col) (doc:position_offset line col i))
-        (local open (: (. doc.lines line) :byte col))
-        (local close (. map open))
-        (when (and close (not= (get-token-at doc line col) :comment))
-          (global select-adj (+ i 1))
-          (set (line2 col2)
-               (get-matching-bracket doc line col line-limit open close
-                                     map.direction))
-          (set found true))))
+      
+      (when found (lua :break))
+      (local (line col) (doc:position_offset line col 0))
+      (local open (: (. doc.lines line) :byte col))
+      (local close (. map open))
+      (when (and close (not= (uber.get-token-at doc line col) :comment))
+        (set (line2 col2)
+             (uber.get-matching-bracket doc line col line-limit open close
+                                        map.direction))
+        (set found true)))
     (when (not found) (lua "return nil"))
     (values line2 col2)))	
 
