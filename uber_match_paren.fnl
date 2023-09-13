@@ -12,5 +12,46 @@
     (set column (+ column (length text)))
     (when (>= column col) (lua "return type, text"))))	
 
+(fn uber.get-matching-bracket [doc
+                               line
+                               col
+                               line-limit
+                               open-byte
+                               close-byte
+                               direction]
+  "Raw bracket matcher for uber match."
+  (let [end-line (+ line (* line-limit direction))]
+    (var depth 0)
+    (while (not= line end-line)
+      (local byte (: (. doc.lines line) :byte col))
+      (if (and (= byte open-byte) (not= (uber.get-token-at doc line col) :comment))
+          (set depth (+ depth 1))
+          (and (= byte close-byte) (not= (uber.get-token-at doc line col) :comment))
+          (do
+            (set depth (- depth 1))
+            (when (= depth 0) (lua "return line, col"))))
+      (local (prev-line prev-col) (values line col))
+      (set-forcibly! (line col) (doc:position_offset line col direction))
+      (when (and (= line prev-line) (= col prev-col)) (lua :break)))))
+
+(fn uber.match [doc line col]
+  (let [line-limit math.huge]
+    (var (line2 col2) nil)
+    (var found false)
+    (each [_ map (ipairs bracket-maps)]
+      (when found (lua :break))
+      (for [i 0 (- 1) (- 1)]
+        (when found (lua :break))
+        (local (line col) (doc:position_offset line col i))
+        (local open (: (. doc.lines line) :byte col))
+        (local close (. map open))
+        (when (and close (not= (get-token-at doc line col) :comment))
+          (global select-adj (+ i 1))
+          (set (line2 col2)
+               (get-matching-bracket doc line col line-limit open close
+                                     map.direction))
+          (set found true))))
+    (when (not found) (lua "return nil"))
+    (values line2 col2)))	
 
 uber
