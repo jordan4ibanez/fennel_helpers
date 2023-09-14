@@ -8,11 +8,6 @@
 ;;tt Try to eval line, if blank:
 ;;tt Eval last scope entry point
 
-(fn test []
-  (print "test"))
-
-(+ 1 1)
-
 ;; Core components
 (local core (require :core))
 (local config (require :core.config))
