@@ -210,7 +210,8 @@ This is so the scanner doesn't get stuck in an infinite loop!"
                 (debug-pos scope-end-position   "scope-end  "))
               (fennel-evaluate-statement (extract-text doc)))
             (do
-              (print "gotta try to run the line here!")))))))
+              (print "gotta try to run the line here!"))))
+      (doc:set_selection (get-x lock-position) (get-y lock-position)))))
 
 
 (local new-commands {})
