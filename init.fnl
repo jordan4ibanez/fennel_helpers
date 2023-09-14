@@ -152,10 +152,9 @@ This is so the scanner doesn't get stuck in an infinite loop!"
    (+ (get-y scope-end-position) 1)))
 
 (fn fennel-evaluate-statement [raw-statement]
-  (print (string.format "(Fennel REPL) Evaluating:\n-=-=-=-=-=-=-=-=-\n%s\n-=-=-=-=-=-=-=-=-\nResult: " raw-statement))
+  (print (string.format "----------------------------\n%s\nResult: " raw-statement))
   (let [eval-result (fennel.eval raw-statement)]
-    (print eval-result)
-    (print "-=-=-=-=-=-=-=-=-")))
+    (print eval-result)))
 
 (fn scan [doc]
   "Scan the document for the lisp scope of the current cursor position to shovel into REPL."
