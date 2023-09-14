@@ -11,6 +11,8 @@
 (fn test []
   (print "test"))
 
+(+ 1 1)
+
 ;; Core components
 (local core (require :core))
 (local config (require :core.config))
@@ -27,6 +29,7 @@
 (local uber (require :plugins.fennel_helpers.uber_match_paren))
 (local fennel (require :plugins.fennel_compiler))
 
+(local debug-enabled false)
 
 ;; BASE EMACS STYLE WALKER
 
@@ -112,7 +115,8 @@ This is so the scanner doesn't get stuck in an infinite loop!"
 (fn init-position [doc]
   "Sets the scope searcher's initial position."
   (set-pos lock-position (doc:get_selection))
-  (debug-pos lock-position "Lock"))
+  (when debug-enabled
+    (debug-pos lock-position "Lock")))
 
 (fn update-position [doc]
   "Update's the scope searcher's current position."
@@ -128,13 +132,15 @@ This is so the scanner doesn't get stuck in an infinite loop!"
   (init-position doc)
   (doc:move_to translate.start_of_doc)
   (set-pos current-position (doc:get_selection))
-  (debug-pos current-position "Current"))
+  (when debug-enabled
+    (debug-pos current-position "Current")))
 
 (fn scope-check [local-position]
   "Test if the current bracket match is within the scope of the current position lock."
-  (print "-=-scope check-=-")
-  (debug-pos local-position "local")
-  (debug-pos lock-position "lock ")
+  (when debug-enabled
+    (print "-=-scope check-=-")
+    (debug-pos local-position "local")
+    (debug-pos lock-position "lock "))
   (greater-than-equal-to local-position lock-position))
 
 (fn extract-text [doc]
@@ -145,11 +151,18 @@ This is so the scanner doesn't get stuck in an infinite loop!"
    (get-x scope-end-position)
    (+ (get-y scope-end-position) 1)))
 
+(fn fennel-evaluate-statement [raw-statement]
+  (print (string.format "(Fennel REPL) Evaluating:\n-=-=-=-=-=-=-=-=-\n%s\n-=-=-=-=-=-=-=-=-\nResult: " raw-statement))
+  (let [eval-result (fennel.eval raw-statement)]
+    (print eval-result)
+    (print "-=-=-=-=-=-=-=-=-")))
+
 (fn scan [doc]
   "Scan the document for the lisp scope of the current cursor position to shovel into REPL."
   ;; Will return solved
   (var solved false)
-  (print "scanning")
+  (when debug-enabled
+    (print "scanning"))
   (while (not solved)
 
     ;; (debug-pos current-position "Current")
@@ -161,10 +174,12 @@ This is so the scanner doesn't get stuck in an infinite loop!"
       (when got-x
         (let [local-position (make-position got-x got-y)
               in-scope (scope-check local-position)]
-          (print "Found outer scope?" in-scope)
-          (print got-x got-y)
+          (when debug-enabled
+            (print "Found outer scope?" in-scope)
+            (print got-x got-y))
           (when in-scope
-            (print "we found our scope")
+            (when debug-enabled
+              (print "we found our scope"))
             (set solved true)
             ;; And now we mark the min and max for the next function to use.
             (set scope-start-position (make-position current-x current-y))
@@ -178,7 +193,9 @@ This is so the scanner doesn't get stuck in an infinite loop!"
 
 
 (fn begin-scope-scan []
-  (print "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+  
+  (when debug-enabled
+    (print "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"))
   (when (active-doc)
     ;; First we nullify the scope position to prevent errors!
     (set scope-start-position nil)
@@ -189,9 +206,10 @@ This is so the scanner doesn't get stuck in an infinite loop!"
       (let [success (scan doc)]
         (if success
             (do
-              (debug-pos scope-start-position "scope-start")
-              (debug-pos scope-end-position   "scope-end  ")
-              (print (extract-text doc)))
+              (when debug-enabled
+                (debug-pos scope-start-position "scope-start")
+                (debug-pos scope-end-position   "scope-end  "))
+              (fennel-evaluate-statement (extract-text doc)))
             (do
               (print "gotta try to run the line here!")))))))
 
