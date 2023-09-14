@@ -138,6 +138,7 @@ This is so the scanner doesn't get stuck in an infinite loop!"
   (greater-than-equal-to local-position lock-position))
 
 (fn scan [doc]
+  "Scan the document for the lisp scope of the current cursor position to shovel into REPL."
   ;; Will return solved
   (var solved false)
   (print "scanning")
@@ -161,16 +162,19 @@ This is so the scanner doesn't get stuck in an infinite loop!"
             (set scope-start-position (make-position current-x current-y))
             (set scope-end-position (make-position got-x got-y))))))
 
-    
     (if (hit-lock)
         (lua :break)))
   ;; Return back if we managed to solve the scope resolution.
+  ;; The min and max of the scope are external, so they can be used without problem.
   solved)
 
 
 (fn begin-scope-scan []
   (print "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
   (when (active-doc)
+    ;; First we nullify the scope position to prevent errors!
+    (set scope-start-position nil)
+    (set scope-end-position nil)
     ;; Here we LOCK the position in. We're gonna see if we can overshoot it.
     (let [doc (active-doc)]
       (scan-init doc)
