@@ -25,7 +25,7 @@
 
 ;; Plugins
 (local uber (require :plugins.fennel_helpers.uber_match_paren))
-;; (local bracketmatch (require :plugins.bracketmatch))
+(local fennel (require :plugins.fennel_compiler))
 
 
 ;; BASE EMACS STYLE WALKER
@@ -95,15 +95,15 @@
   (and (>= (get-x pos1) (get-x pos2))
        (>= (get-y pos1) (get-y pos2))))
 
-(fn hit-lock []
-  "Find if the current position has finally hit the lock position.
-This is so the scanner doesn't get stuck in an infinite loop!"
-  (not (less-than current-position lock-position)))
-
 (fn debug-pos [pos info-text]
   "Print the current position of the helper cursor."
   (let [info-text (or info-text "position")]
     (print (string.format "%s: ( %s | %s )" info-text (get-x pos) (get-y pos)))))
+
+(fn hit-lock []
+  "Find if the current position has finally hit the lock position.
+This is so the scanner doesn't get stuck in an infinite loop!"
+  (not (less-than current-position lock-position)))
 
 (fn active-doc []
   "Shorthand for getting the current active document or nil."
@@ -136,6 +136,14 @@ This is so the scanner doesn't get stuck in an infinite loop!"
   (debug-pos local-position "local")
   (debug-pos lock-position "lock ")
   (greater-than-equal-to local-position lock-position))
+
+(fn extract-text [doc]
+  "Extract the text out of the found scope selection."
+  (doc:get_text
+   (get-x scope-start-position)
+   (get-y scope-start-position)
+   (get-x scope-end-position)
+   (+ (get-y scope-end-position) 1)))
 
 (fn scan [doc]
   "Scan the document for the lisp scope of the current cursor position to shovel into REPL."
@@ -178,7 +186,14 @@ This is so the scanner doesn't get stuck in an infinite loop!"
     ;; Here we LOCK the position in. We're gonna see if we can overshoot it.
     (let [doc (active-doc)]
       (scan-init doc)
-      (scan doc))))
+      (let [success (scan doc)]
+        (if success
+            (do
+              (debug-pos scope-start-position "scope-start")
+              (debug-pos scope-end-position   "scope-end  ")
+              (print (extract-text doc)))
+            (do
+              (print "gotta try to run the line here!")))))))
 
 
 (local new-commands {})
