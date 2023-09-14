@@ -53,6 +53,6 @@
                                         map.direction))
         (set found true)))
     (when (not found) (lua "return nil"))
-    (values line2 col2)))	
+    (values line2 col2)))
 
 uber

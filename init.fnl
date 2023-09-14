@@ -70,10 +70,20 @@
   (or (< (get-x pos1) (get-x pos2))
       (< (get-y pos1) (get-y pos2))))
 
+(fn less-than-equal-to [pos1 pos2]
+  "Check if position 1 is less than or equal to position 2."
+  (or (<= (get-x pos1) (get-x pos2))
+      (<= (get-y pos1) (get-y pos2)))))
+
 (fn greater-than [pos1 pos2]
   "Check if position 1 is greater than position 2."
   (or (> (get-x pos1) (get-x pos2))
       (> (get-y pos1) (get-y pos2))))
+
+(fn greater-than-equal-to [pos1 pos2]
+  "Check if position 1 is greater than or equal to position 2."
+  (or (>= (get-x pos1) (get-x pos2))
+      (>= (get-y pos1) (get-y pos2))))
 
 (fn hit-lock []
   "Find if the current position has finally hit the lock position.
@@ -110,6 +120,8 @@ This is so the scanner doesn't get stuck in an infinite loop!"
   (set-pos current-position (doc:get_selection))
   (debug-pos current-position "Current"))
 
+(fn scope-check [x y]
+  )
 
 (fn scan [doc]
   (var solved false)
