@@ -36,6 +36,7 @@
 
 ;;TODO: This can be used to collect scope!
 ;;tt Use this to do the red emacs parentheses things!
+;;tt needs a separate function for depth
 (fn uber.match [doc line col]
   (let [line-limit math.huge]
     (var (line2 col2) nil)

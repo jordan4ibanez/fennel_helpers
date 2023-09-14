@@ -8,6 +8,9 @@
 ;;tt Try to eval line, if blank:
 ;;tt Eval last scope entry point
 
+(fn test []
+  (print "test"))
+
 ;; Core components
 (local core (require :core))
 (local config (require :core.config))
@@ -35,6 +38,8 @@
 (var current-position {:x 0
                        :y 0})
 
+;; WARNING: Min and Max are defined just for visualization!
+;; WARNING: These become nil during runtime to prevent uncatchable errors!
 ;; Min helper position. Used for scope identification.
 (var scope-start-position {:x 0
                            :y 0})
@@ -42,6 +47,11 @@
 ;; Max helper position. Used for scope identification.
 (var scope-end-position {:x 0
                          :y 0})
+
+(fn make-position [x y]
+  "Make a position table from a raw X and Y numeric input."
+  {:x x
+   :y y})
 
 (fn get-x [pos]
   "Get the X component of a position table."
@@ -73,17 +83,17 @@
 (fn less-than-equal-to [pos1 pos2]
   "Check if position 1 is less than or equal to position 2."
   (or (<= (get-x pos1) (get-x pos2))
-      (<= (get-y pos1) (get-y pos2)))))
+      (<= (get-y pos1) (get-y pos2))))
 
 (fn greater-than [pos1 pos2]
   "Check if position 1 is greater than position 2."
-  (or (> (get-x pos1) (get-x pos2))
-      (> (get-y pos1) (get-y pos2))))
+  (and (> (get-x pos1) (get-x pos2))
+       (> (get-y pos1) (get-y pos2))))
 
 (fn greater-than-equal-to [pos1 pos2]
   "Check if position 1 is greater than or equal to position 2."
-  (or (>= (get-x pos1) (get-x pos2))
-      (>= (get-y pos1) (get-y pos2))))
+  (and (>= (get-x pos1) (get-x pos2))
+       (>= (get-y pos1) (get-y pos2))))
 
 (fn hit-lock []
   "Find if the current position has finally hit the lock position.
@@ -120,10 +130,15 @@ This is so the scanner doesn't get stuck in an infinite loop!"
   (set-pos current-position (doc:get_selection))
   (debug-pos current-position "Current"))
 
-(fn scope-check [x y]
-  )
+(fn scope-check [local-position]
+  "Test if the current bracket match is within the scope of the current position lock."
+  (print "-=-scope check-=-")
+  (debug-pos local-position "local")
+  (debug-pos lock-position "lock ")
+  (greater-than-equal-to local-position lock-position))
 
 (fn scan [doc]
+  ;; Will return solved
   (var solved false)
   (print "scanning")
   (while (not solved)
@@ -131,14 +146,26 @@ This is so the scanner doesn't get stuck in an infinite loop!"
     ;; (debug-pos current-position "Current")
     (move-forward doc)
 
-    (let [(x y) (decompile-pos current-position)
-          (got-x got-y) (uber.match doc x y)]
+    ;; This is a decompilation & recompilation because got-x can also be nil.
+    (let [(current-x current-y) (decompile-pos current-position)
+          (got-x got-y) (uber.match doc current-x current-y)]
       (when got-x
-        (print got-x got-y)))
+        (let [local-position (make-position got-x got-y)
+              in-scope (scope-check local-position)]
+          (print "Found outer scope?" in-scope)
+          (print got-x got-y)
+          (when in-scope
+            (print "we found our scope")
+            (set solved true)
+            ;; And now we mark the min and max for the next function to use.
+            (set scope-start-position (make-position current-x current-y))
+            (set scope-end-position (make-position got-x got-y))))))
 
     
     (if (hit-lock)
-        (set solved true))))
+        (lua :break)))
+  ;; Return back if we managed to solve the scope resolution.
+  solved)
 
 
 (fn begin-scope-scan []
